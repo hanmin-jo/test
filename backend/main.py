@@ -273,7 +273,7 @@ def create_note_and_quizzes(
         db.refresh(quiz)
 
     # 4) 응답 스키마로 변환
-    note_resp = NoteResponse.from_orm(note)
+    note_resp = NoteResponse.model_validate(note)
     quiz_resps: List[QuizResponse] = []
     for quiz in quiz_models:
         quiz_resps.append(

@@ -28,7 +28,7 @@ class NoteResponse(BaseModel):
     content: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class QuizResponse(BaseModel):
@@ -39,7 +39,7 @@ class QuizResponse(BaseModel):
     explanation: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class NoteWithQuizzesResponse(BaseModel):

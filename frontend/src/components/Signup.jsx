@@ -5,8 +5,8 @@ export default function Signup() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // 임시로 회원가입 후 바로 메인 퀴즈 화면으로 이동
-    navigate("/main");
+    // 임시로 회원가입 후 메인 대시보드 화면으로 이동
+    navigate("/dashboard");
   };
 
   return (

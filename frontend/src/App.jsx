@@ -3,6 +3,8 @@ import { useState } from "react";
 import Login from "./components/Login.jsx";
 import Signup from "./components/Signup.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
+import MainLayout from "./layouts/MainLayout.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 
 function QuizMain() {
   const [content, setContent] = useState("");
@@ -214,6 +216,9 @@ export default function App() {
           <Route index element={<Navigate to="login" replace />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
+        </Route>
+        <Route path="/dashboard" element={<MainLayout />}>
+          <Route index element={<Dashboard />} />
         </Route>
         <Route path="/main" element={<QuizMain />} />
       </Routes>

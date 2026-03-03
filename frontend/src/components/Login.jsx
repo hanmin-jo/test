@@ -5,8 +5,8 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // 임시로 인증 없이 메인 퀴즈 화면으로 이동
-    navigate("/main");
+    // 임시로 인증 없이 메인 대시보드 화면으로 이동
+    navigate("/dashboard");
   };
 
   return (

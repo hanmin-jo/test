@@ -6,6 +6,9 @@ import openai
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from dotenv import load_dotenv
+from google import genai
 
 from database import Base, engine, get_db
 import models
@@ -32,6 +35,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# .env 로드
+load_dotenv()
+
+
+# ---- OpenAI 설정 ----
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    # 개발 단계에서는 없을 수 있으므로, 런타임 시점에만 예외 처리
+    # 엔드포인트 내부에서 다시 한 번 확인한다.
+    openai.api_key = None
+else:
+    openai.api_key = OPENAI_API_KEY
+
+
+class AIRequest(BaseModel):
+    text: str
+
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -46,14 +66,73 @@ def health_check() -> dict:
     return {"status": "ok"}
 
 
-# ---- OpenAI 설정 ----
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    # 개발 단계에서는 없을 수 있으므로, 런타임 시점에만 예외 처리
-    # 엔드포인트 내부에서 다시 한 번 확인한다.
-    openai.api_key = None
-else:
-    openai.api_key = OPENAI_API_KEY
+@app.post("/api/summary", tags=["ai"])
+def create_summary(payload: AIRequest) -> Dict[str, str]:
+    """
+    Gemini를 사용하여 학습 노트를 구조적으로 요약하는 엔드포인트.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="GEMINI_API_KEY가 설정되어 있지 않습니다.",
+        )
+
+    contents = (
+        "다음 학습 노트 텍스트를 분석해서, 분량에 제한을 두지 말고 전체 내용의 핵심과 "
+        "중요한 디테일이 모두 포함되도록 명확하고 구조적으로 요약해 줘. "
+        "마크다운 형식의 글머리 기호 등을 사용해서 가독성 좋게 정리해 줘.\n\n"
+        f"--- 학습 노트 시작 ---\n{payload.text}\n--- 학습 노트 끝 ---"
+    )
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+        )
+        summary_text = response.text if hasattr(response, "text") else str(response)
+        return {"summary": summary_text}
+    except Exception as e:  # noqa: BLE001
+        print(f"🚨 AI API 에러 상세 (/api/summary): {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        ) from e
+
+
+@app.post("/api/quiz", tags=["ai"])
+def create_quiz(payload: AIRequest) -> Dict[str, str]:
+    """
+    Gemini를 사용하여 객관식 퀴즈 3개를 생성하는 엔드포인트.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="GEMINI_API_KEY가 설정되어 있지 않습니다.",
+        )
+
+    contents = (
+        "다음 텍스트를 바탕으로 학습자가 풀어볼 수 있는 객관식 퀴즈 3문제를 만들어 줘. "
+        "각 문제에는 4개의 보기와 정답, 간단한 해설을 포함해서 보기 좋게 정리해 줘.\n\n"
+        f"--- 학습 노트 시작 ---\n{payload.text}\n--- 학습 노트 끝 ---"
+    )
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+        )
+        quiz_text = response.text if hasattr(response, "text") else str(response)
+        return {"quiz": quiz_text}
+    except Exception as e:  # noqa: BLE001
+        print(f"🚨 AI API 에러 상세 (/api/quiz): {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        ) from e
 
 
 def _parse_quiz_json(raw_content: str) -> List[Dict[str, Any]]:

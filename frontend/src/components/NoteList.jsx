@@ -3,9 +3,29 @@ import { Search, Filter, FileText, Plus, ChevronDown, X } from "lucide-react";
 
 export default function NoteList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [notes, setNotes] = useState([]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+
+  const handleCreateNote = () => {
+    const trimmedTitle = title.trim();
+    const trimmedCategory = category.trim();
+
+    const newNote = {
+      id: Date.now(),
+      title: trimmedTitle || "제목 없는 노트",
+      category: trimmedCategory || "일반",
+      date: new Date().toLocaleDateString(),
+    };
+
+    setNotes((prev) => [newNote, ...prev]);
+    setIsModalOpen(false);
+    setTitle("");
+    setCategory("");
+  };
 
   return (
     <>
@@ -54,24 +74,52 @@ export default function NoteList() {
           </button>
         </section>
 
-        {/* 하단: 빈 상태 */}
+        {/* 하단: 노트 목록 / 빈 상태 */}
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col items-center justify-center px-6 py-16 md:py-20 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-              <FileText className="h-7 w-7 text-slate-300" />
+          {notes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center px-6 py-16 md:py-20 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                <FileText className="h-7 w-7 text-slate-300" />
+              </div>
+              <p className="mt-4 text-sm md:text-base text-slate-500">
+                아직 노트가 없습니다
+              </p>
+              <button
+                type="button"
+                onClick={openModal}
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition"
+              >
+                <Plus className="h-4 w-4" />
+                <span>첫 노트 만들기</span>
+              </button>
             </div>
-            <p className="mt-4 text-sm md:text-base text-slate-500">
-              아직 노트가 없습니다
-            </p>
-            <button
-              type="button"
-              onClick={openModal}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition"
-            >
-              <Plus className="h-4 w-4" />
-              <span>첫 노트 만들기</span>
-            </button>
-          </div>
+          ) : (
+            <div className="px-5 py-5 md:px-6 md:py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                {notes.map((note) => (
+                  <article
+                    key={note.id}
+                    className="rounded-lg border border-slate-100 bg-white px-4 py-4 shadow-sm hover:-translate-y-1 hover:shadow-md transition transform"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-sm md:text-base font-semibold text-slate-900 line-clamp-2">
+                        {note.title}
+                      </h3>
+                      <span className="inline-flex items-center rounded-full bg-slate-900 text-white px-2.5 py-0.5 text-[11px] font-medium">
+                        {note.category}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-400">
+                      생성 날짜:{" "}
+                      <span className="font-medium text-slate-600">
+                        {note.date}
+                      </span>
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       </div>
 
@@ -116,6 +164,8 @@ export default function NoteList() {
                 <input
                   type="text"
                   placeholder="노트 제목을 입력하세요"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-300 transition"
                 />
               </div>
@@ -128,6 +178,8 @@ export default function NoteList() {
                 <input
                   list="note-categories"
                   placeholder="카테고리를 선택하거나 새로 입력하세요"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-300 transition"
                 />
                 <datalist id="note-categories">
@@ -146,6 +198,7 @@ export default function NoteList() {
             <div className="mt-6">
               <button
                 type="button"
+                onClick={handleCreateNote}
                 className="w-full inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition"
               >
                 노트 생성

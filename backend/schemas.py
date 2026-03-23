@@ -1,45 +1,73 @@
+from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
+
+# ─── Auth ────────────────────────────────────────────────────────────────────
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+    name: str = Field(..., min_length=1)
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    name: str
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse
+
+
+# ─── Note ────────────────────────────────────────────────────────────────────
 
 class NoteCreateRequest(BaseModel):
-    """
-    클라이언트에서 노트 생성 + 퀴즈 생성을 요청할 때 사용하는 스키마.
+    content: str = Field(..., description="노트 원본 텍스트")
+    title: Optional[str] = Field(default=None)
+    category: Optional[str] = Field(default="일반")
 
-    기본 요구사항은 content 이지만,
-    향후 확장을 위해 title, user_id 는 선택 항목으로 둔다.
-    """
 
-    content: str = Field(..., description="저장할 노트의 원본 텍스트")
-    title: Optional[str] = Field(
-        default=None,
-        description="노트 제목 (없으면 서버에서 기본값 생성)",
-    )
-    user_id: Optional[int] = Field(
-        default=None,
-        description="작성자 사용자 ID (없으면 임시 기본값 사용)",
-    )
+class NoteUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    category: Optional[str] = None
 
 
 class NoteResponse(BaseModel):
     id: int
     title: str
     content: str
+    category: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
 
+
+# ─── Quiz ────────────────────────────────────────────────────────────────────
 
 class QuizResponse(BaseModel):
     id: int
     question: str
     choices: List[str]
-    answer: str
+    answer: int          # 정답 인덱스 (0~3)
     explanation: str
-
-    class Config:
-        from_attributes = True
 
 
 class NoteWithQuizzesResponse(BaseModel):
@@ -47,12 +75,21 @@ class NoteWithQuizzesResponse(BaseModel):
     quizzes: List[QuizResponse]
 
 
-class NoteUpdateRequest(BaseModel):
-    """
-    노트의 제목/내용을 부분 업데이트할 때 사용하는 스키마.
-    """
+# ─── Study Record ─────────────────────────────────────────────────────────────
 
-    title: Optional[str] = None
-    content: Optional[str] = None
+class StudyRecordCreate(BaseModel):
+    quiz_id: int
+    is_correct: bool
 
 
+class StudyRecordBatch(BaseModel):
+    records: List[StudyRecordCreate]
+
+
+# ─── Dashboard ───────────────────────────────────────────────────────────────
+
+class DashboardStats(BaseModel):
+    total_notes: int
+    total_quizzes_completed: int
+    average_score: float
+    today_activity: int
